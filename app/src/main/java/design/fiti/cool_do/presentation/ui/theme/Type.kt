@@ -1,4 +1,4 @@
-package design.fiti.cool_do.ui.theme
+package design.fiti.cool_do.presentation.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
