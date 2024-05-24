@@ -6,4 +6,6 @@
     <string name="go_to_tasksScreen">Go to TasksScreen</string>
     <string name="morevet">More options</string>
     <string name="adddo">Make a new to do.</string>
+    <string name="up">Navigate back.</string>
+    <string name="tasks">Tasks</string>
 </resources>
