@@ -24,7 +24,7 @@ fun App(modifier: Modifier = Modifier) {
                 BoardsScreen(navController)
             }
             composable(route = AppRoutes.Tasks.name) {
-                TasksScreen(navController)
+                TasksScreen()
             }
         }
 
