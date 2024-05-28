@@ -16,25 +16,29 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = coolPrimary_d,
+    secondary = coolSecondary_d,
+    tertiary = coolTertiary_d,
+    background = coolWhiteWeak_d,
+    surface = coolWhite_d,
+    onPrimary = coolWhite_d,
+    onSecondary = coolWhite_d,
+    onTertiary = coolBlackWeak_d,
+    onBackground = coolBlack_d,
+    onSurface = coolBlack_d,
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = coolPrimary_l,
+    secondary = coolSecondary_l,
+    tertiary = coolTertiary_l,
+    background = coolWhiteWeak_l,
+    surface = coolWhite_l,
+    onPrimary = coolWhite_l,
+    onSecondary = coolWhite_l,
+    onTertiary = coolBlackWeak_l,
+    onBackground = coolBlack_l,
+    onSurface = coolBlack_l,
 )
 
 @Composable
@@ -49,7 +53,6 @@ fun CooldoTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }

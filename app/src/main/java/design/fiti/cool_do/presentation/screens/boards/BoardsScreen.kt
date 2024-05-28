@@ -82,7 +82,9 @@ fun BoardsScreen(navController: NavController) {
                     AddDo()
                 }
                 items(10) {
-                    CardItem()
+                    CardItem() {
+                        navController.navigate(AppRoutes.Tasks.name)
+                    }
                 }
             }
 
@@ -120,7 +122,7 @@ private fun AddDo() {
 @Preview
 @Composable
 private fun BoardHeaderSection(modifier: Modifier = Modifier) {
-    Column{
+    Column {
         Spacer(Modifier.height(32.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -164,9 +166,8 @@ private fun BoardHeaderSection(modifier: Modifier = Modifier) {
 
 }
 
-@Preview
 @Composable
-private fun CardItem() {
+private fun CardItem(navigateToSubTasksScreen: () -> Unit) {
     Card(
         modifier = Modifier
             .heightIn(
@@ -174,7 +175,8 @@ private fun CardItem() {
                 max = 220.dp
             )
             .padding(8.dp),
-        shape = RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(24.dp),
+        onClick = navigateToSubTasksScreen
     ) {
         Column(
             verticalArrangement = Arrangement.SpaceAround,

@@ -28,12 +28,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import design.fiti.cool_do.R
+import design.fiti.cool_do.presentation.navigation.AppRoutes
 
-@Preview(showSystemUi = true)
 @Composable
-fun WelcomeScreen(modifier: Modifier = Modifier) {
-    Scaffold(containerColor = MaterialTheme.colorScheme.tertiaryContainer) { innerPadding ->
+fun WelcomeScreen(modifier: Modifier = Modifier, navController: NavController) {
+    Scaffold { innerPadding ->
         Column(
             Modifier
                 .padding(innerPadding)
@@ -72,7 +73,7 @@ fun WelcomeScreen(modifier: Modifier = Modifier) {
                 )
                 Spacer(modifier = Modifier.fillMaxHeight(0.4f))
                 Button(
-                    onClick = { /*TODO*/ },
+                    onClick = { navController.navigate(AppRoutes.Boards.name) },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .padding(vertical = 16.dp)

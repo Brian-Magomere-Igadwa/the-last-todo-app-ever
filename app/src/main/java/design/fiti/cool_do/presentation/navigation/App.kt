@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import design.fiti.cool_do.presentation.screens.boards.BoardsScreen
 import design.fiti.cool_do.presentation.screens.tasks.TasksScreen
+import design.fiti.cool_do.presentation.screens.welcome.WelcomeScreen
 
 @Composable
 fun App(modifier: Modifier = Modifier) {
@@ -18,13 +19,16 @@ fun App(modifier: Modifier = Modifier) {
         NavHost(
             modifier = Modifier.padding(innerPadding),
             navController = navController,
-            startDestination = AppRoutes.Boards.name
+            startDestination = AppRoutes.Welcome.name
         ) {
             composable(route = AppRoutes.Boards.name) {
-                BoardsScreen(navController)
+                BoardsScreen(navController = navController)
             }
             composable(route = AppRoutes.Tasks.name) {
-                TasksScreen()
+                TasksScreen(navController = navController)
+            }
+            composable(route = AppRoutes.Welcome.name) {
+                WelcomeScreen(navController = navController)
             }
         }
 
@@ -32,6 +36,8 @@ fun App(modifier: Modifier = Modifier) {
 }
 
 sealed class AppRoutes(val name: String) {
+
+    data object Welcome : AppRoutes(name = "Welcome")
     data object Boards : AppRoutes(name = "Boards")
     data object Tasks : AppRoutes(name = "Tasks")
 }

@@ -77,25 +77,18 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    val navVersion = "2.7.7"
-    implementation("androidx.navigation:navigation-compose:$navVersion")
-
-    val hiltVersion = "2.48"
-    implementation("com.google.dagger:hilt-android:$hiltVersion")
-    kapt("com.google.dagger:hilt-android-compiler:$hiltVersion")
-
-    val roomVersion = "2.6.1"
-    implementation("androidx.room:room-runtime:$roomVersion")
-    annotationProcessor("androidx.room:room-compiler:$roomVersion")
-    kapt("androidx.room:room-compiler:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion")
-    testImplementation("androidx.room:room-testing:$roomVersion")
-    implementation("androidx.room:room-paging:$roomVersion")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
-
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-
-    androidTestImplementation("androidx.navigation:navigation-testing:2.6.0")
-    androidTestImplementation("androidx.test.espresso:espresso-intents:3.5.1")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    implementation(libs.androidx.navigation)
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.android.compiler)
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
+    kapt(libs.room.compiler)
+    implementation(libs.room.ktx)
+    testImplementation(libs.room.testing)
+    implementation(libs.room.paging)
+    implementation(libs.hilt.navigation)
+    implementation(libs.converter.gson)
+    androidTestImplementation(libs.navigation.testing)
+    androidTestImplementation(libs.espresso.intents)
+    androidTestImplementation(libs.junitOther)
 }
