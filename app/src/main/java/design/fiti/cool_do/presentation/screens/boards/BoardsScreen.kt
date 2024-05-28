@@ -2,7 +2,6 @@ package design.fiti.cool_do.presentation.screens.boards
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,8 +15,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.shape.CircleShape
@@ -25,19 +22,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import design.fiti.cool_do.R
 import design.fiti.cool_do.presentation.navigation.AppRoutes
@@ -54,6 +53,7 @@ import design.fiti.cool_do.presentation.navigation.AppRoutes
 
 @Composable
 fun BoardsScreen(navController: NavController) {
+    var addDoClicked by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             BoardHeaderSection()
@@ -68,6 +68,8 @@ fun BoardsScreen(navController: NavController) {
                 )
                 .fillMaxSize(),
         ) {
+            if (addDoClicked)
+                DialogWithForm(onDismissRequest = { addDoClicked = false }, onConfirmation = {})
             Spacer(modifier = Modifier.height(innerPadding.calculateTopPadding()))
             Spacer(modifier = Modifier.height(16.dp))
             Text(
@@ -79,7 +81,7 @@ fun BoardsScreen(navController: NavController) {
                 columns = StaggeredGridCells.Fixed(2)
             ) {
                 item {
-                    AddDo()
+                    AddDo(onClick = { addDoClicked = true })
                 }
                 items(10) {
                     CardItem() {
@@ -92,9 +94,68 @@ fun BoardsScreen(navController: NavController) {
     }
 }
 
+@Composable
+fun DialogWithForm(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+) {
+    var inputValue by rememberSaveable { mutableStateOf("") }
+    Dialog(onDismissRequest = { onDismissRequest() }) {
+        // Draw a rectangle shape with rounded corners inside the dialog
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(375.dp)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                TextField(
+                    value = inputValue,
+                    onValueChange = { inputValue = it },
+                    placeholder = {
+                        Text("Enter your new goal")
+                    },
+
+                    )
+
+                Text(
+                    text = "Are you sure you'd love to save this goal?",
+                    modifier = Modifier.padding(16.dp),
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    TextButton(
+                        onClick = { onDismissRequest() },
+                        modifier = Modifier.padding(8.dp),
+                    ) {
+                        Text("Not really")
+                    }
+                    TextButton(
+                        onClick = { onConfirmation() },
+                        modifier = Modifier.padding(8.dp),
+                    ) {
+                        Text("Yes, sure.")
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 @Preview
 @Composable
-private fun AddDo() {
+private fun AddDo(onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .heightIn(
@@ -102,7 +163,8 @@ private fun AddDo() {
                 max = 220.dp * 0.3f
             )
             .padding(8.dp),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp),
+        onClick = onClick
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

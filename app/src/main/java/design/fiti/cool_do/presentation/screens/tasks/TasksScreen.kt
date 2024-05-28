@@ -51,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import design.fiti.cool_do.R
 import design.fiti.cool_do.presentation.navigation.AppRoutes
@@ -172,7 +173,6 @@ private fun SwipeableTaskCard(modifier: Modifier = Modifier) {
 
         Card(
             onClick = { /*TODO*/ },
-            colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(24.dp),
             modifier = modifier
                 .pointerInput(Unit) {
@@ -245,8 +245,9 @@ private fun SwipeableTaskCard(modifier: Modifier = Modifier) {
                     }
                     Box(
                         contentAlignment = Alignment.Center, modifier = Modifier
-                            .padding(2.dp)
                             .background(Color.Green.copy(alpha = 0.3f))
+                            .padding(vertical = 2.dp, horizontal = 4.dp)
+                            .clip(RoundedCornerShape(4.dp))
                     ) {
                         Text(
                             text = "COMPLETED",
@@ -274,7 +275,10 @@ private fun TaskCard(modifier: Modifier = Modifier) {
         ) {
             Text(
                 text = "Go to the market.",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 8.sp
+                )
             )
             Spacer(modifier = Modifier.height(4.dp))
             Row(
