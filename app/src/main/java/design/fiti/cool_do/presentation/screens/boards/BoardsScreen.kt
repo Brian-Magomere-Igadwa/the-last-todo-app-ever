@@ -1,13 +1,15 @@
 package design.fiti.cool_do.presentation.screens.boards
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,7 +61,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import design.fiti.cool_do.R
 import design.fiti.cool_do.data.util.Resource
@@ -69,10 +70,11 @@ import design.fiti.cool_do.presentation.viewmodel.GoalsUiState
 import design.fiti.cool_do.presentation.viewmodel.GoalsViewModel
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BoardsScreen(navController: NavController) {
+fun BoardsScreen(navController: NavController, viewModel: GoalsViewModel) {
     var addDoClicked by remember { mutableStateOf(false) }
-    val viewModel: GoalsViewModel = hiltViewModel()
+
     val state by viewModel.uiState.collectAsState()
 
     Scaffold(
@@ -89,12 +91,29 @@ fun BoardsScreen(navController: NavController) {
                 )
                 .fillMaxSize(),
         ) {
-            if (addDoClicked)
+
+            AnimatedVisibility(
+                visible = addDoClicked,
+                enter = fadeIn() + slideInVertically(
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMedium,
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                    )
+                ),
+                exit = fadeOut() + slideOutVertically(
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMedium,
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                    )
+                )
+            ) {
                 DialogWithForm(
                     onDismissRequest = { addDoClicked = false },
                     state = state,
                     viewModel = viewModel,
                     onConfirmation = {})
+            }
+
             Spacer(modifier = Modifier.height(innerPadding.calculateTopPadding()))
             Spacer(modifier = Modifier.height(16.dp))
             Text(
@@ -102,15 +121,30 @@ fun BoardsScreen(navController: NavController) {
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
             )
             LazyVerticalStaggeredGrid(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .animateContentSize(
+                        animationSpec = spring(
+                            stiffness = Spring.StiffnessLow,
+                        )
+                    ),
                 columns = StaggeredGridCells.Fixed(2)
             ) {
                 item {
                     AddDo(onClick = { addDoClicked = true })
                 }
                 items(state.goalsForBoardsScreen) {
-                    CardItem(goal = it, viewModel = viewModel) {
-                        navController.navigate(AppRoutes.Tasks.name)
+                    CardItem(
+                        goal = it,
+                        viewModel = viewModel,
+                        state = state,
+                        modifier = Modifier.animateItemPlacement(
+                            animationSpec = spring(
+                                stiffness = Spring.StiffnessLow
+                            )
+                        )
+                    ) {
+                        navController.navigate(AppRoutes.Tasks.name + "/${it.goal.id}")
                     }
                 }
             }
@@ -126,7 +160,6 @@ fun DialogWithForm(
     viewModel: GoalsViewModel,
     state: GoalsUiState
 ) {
-    var inputValue by rememberSaveable { mutableStateOf("") }
     var showLoader by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(key1 = state.insertGoal_result) {
@@ -302,12 +335,14 @@ private fun BoardHeaderSection(modifier: Modifier = Modifier) {
 
 @Composable
 private fun CardItem(
+    modifier: Modifier,
     goal: GoalsForBoardsScreen,
+    state: GoalsUiState,
     viewModel: GoalsViewModel,
-    navigateToSubTasksScreen: () -> Unit
+    navigateToSubTasksScreen: () -> Unit,
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .heightIn(
                 min = 220.dp,
                 max = 220.dp
@@ -323,7 +358,7 @@ private fun CardItem(
                 .fillMaxSize()
                 .padding(8.dp)
         ) {
-            EmojiSection()
+            EmojiSection(viewModel, goal, state)
             TaskHeadlines(goal = goal)
             TaskStats(goal = goal, viewModel = viewModel)
 
@@ -333,12 +368,44 @@ private fun CardItem(
 
 @Preview
 @Composable
-private fun EmojiSection() {
+private fun EmojiSection(
+    viewModel: GoalsViewModel,
+    goal: GoalsForBoardsScreen,
+    state: GoalsUiState
+) {
     var showMenu by rememberSaveable {
         mutableStateOf(false)
     }
+    var showLoader by rememberSaveable {
+        mutableStateOf(false)
+    }
+    LaunchedEffect(key1 = state.deleteGoals_result) {
+        when (state.deleteGoals_result) {
+            is Resource.Success -> {
+                showLoader = false
+                showMenu = false
+                viewModel.getGoalsForBoardsScreen()
+            }
+
+            is Resource.Error -> {
+                // show error
+                showLoader = false
+            }
+
+            is Resource.Loading -> {
+                // show loading
+                showLoader = true
+            }
+
+            null -> {
+                // do nothing
+            }
+        }
+    }
 
     Box() {
+
+
         Row(
             modifier = Modifier
                 .padding(horizontal = 4.dp)
@@ -374,14 +441,14 @@ private fun EmojiSection() {
             visible = showMenu,
             enter = fadeIn() + slideInVertically(
                 animationSpec = spring(
-                    stiffness = 100f,
-                    dampingRatio = 0.1f,
+                    stiffness = Spring.StiffnessMedium,
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
                 )
             ),
             exit = fadeOut() + slideOutVertically(
                 animationSpec = spring(
-                    stiffness = 100f,
-                    dampingRatio = 0.1f
+                    stiffness = Spring.StiffnessMedium,
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
                 )
             )
         ) {
@@ -393,7 +460,13 @@ private fun EmojiSection() {
                     RoundedCornerShape(32.dp)
                 )
             ) {
-                DropdownMenuItem(text = { Text("Delete") }, onClick = { })
+                DropdownMenuItem(
+                    text = {
+                        Text("Delete")
+                    },
+                    onClick = {
+                        viewModel.deleteGoal(goal.goal)
+                    })
                 HorizontalDivider()
                 DropdownMenuItem(text = { Text("Edit") }, onClick = { /*TODO*/ })
                 HorizontalDivider()

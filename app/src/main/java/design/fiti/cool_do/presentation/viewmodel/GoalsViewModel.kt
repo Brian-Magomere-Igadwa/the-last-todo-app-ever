@@ -1,5 +1,6 @@
 package design.fiti.cool_do.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -10,6 +11,7 @@ import design.fiti.cool_do.domain.model.Goal
 import design.fiti.cool_do.domain.model.Task
 import design.fiti.cool_do.domain.repository.TasksRepo
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -71,6 +73,85 @@ class GoalsViewModel @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    fun deleteGoal(goal: Goal) {
+        _uiState.update {
+            _uiState.value.copy(
+                deleteGoals_isLoading = true,
+                deleteGoals_result = Resource.Loading()
+            )
+        }
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                repo.deleteGoal(goal).collect { resource ->
+                    when (resource) {
+                        is Resource.Loading -> {
+                            Log.d("Error checks", "Loading")
+                            _uiState.update {
+                                _uiState.value.copy(
+                                    deleteGoals_isLoading = true,
+                                    deleteGoals_result = Resource.Loading()
+                                )
+                            }
+                        }
+
+                        is Resource.Success -> {
+                            _uiState.update {
+                                Log.d("Error checks", "Successs")
+                                _uiState.value.copy(
+                                    deleteGoals_isLoading = false,
+                                    deleteGoals_result = Resource.Success(
+                                        "Operation successful"
+                                    )
+                                )
+                            }
+                            delay(200)
+                            _uiState.update {
+
+                                _uiState.value.copy(
+                                    deleteGoals_isLoading = false,
+                                    deleteGoals_result = null
+                                )
+                            }
+                        }
+
+                        is Resource.Error -> {
+                            _uiState.update {
+                                _uiState.value.copy(
+                                    error = resource.message ?: "An error occurred fetching goals.",
+                                    deleteGoals_isLoading = false,
+                                    deleteGoals_result = Resource.Error(
+                                        message = resource.message
+                                            ?: "An error occurred fetching goals."
+                                    )
+                                )
+                            }
+                            Log.d("Error checks", "Errored...")
+                        }
+
+
+                    }
+                }
+            }
+        }
+    }
+
+
+    fun getGoalWithTasks(goalId: Int) {
+        if (uiState.value.goalwithtasks.isEmpty()) getGoalsForBoardsScreen()
+        try {
+            _uiState.update {
+                _uiState.value.copy(
+                    filteredGoalWithTasks = _uiState.value.goalwithtasks.find {
+                        it.goal.id == goalId
+                    }
+                )
+            }
+        } catch (e: Exception) {
+            Log.d("Error checks", "Error: ${e.localizedMessage}")
         }
     }
 
@@ -151,45 +232,57 @@ class GoalsViewModel @Inject constructor(
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                repo.insertGoal(Goal(id = 0, title = uiState.value.newGoalTitle))
-                    .collect { resource ->
-                        when (resource) {
-                            is Resource.Loading -> {
-                                _uiState.update {
-                                    _uiState.value.copy(
-                                        insertGoal_isLoading = true,
-                                        insertGoal_result = Resource.Loading()
-                                    )
-                                }
+                repo.insertGoal(
+                    Goal(
+                        id = 0,
+                        title = uiState.value.newGoalTitle,
+                        timeStampForSorting = System.currentTimeMillis()
+                    )
+                ).collect { resource ->
+                    when (resource) {
+                        is Resource.Loading -> {
+                            _uiState.update {
+                                _uiState.value.copy(
+                                    insertGoal_isLoading = true,
+                                    insertGoal_result = Resource.Loading()
+                                )
                             }
-
-                            is Resource.Success -> {
-                                _uiState.update {
-                                    _uiState.value.copy(
-                                        insertGoal_isLoading = false,
-                                        newGoalTitle = "",
-                                        insertGoal_result = Resource.Success("Operation successful")
-                                    )
-                                }
-                            }
-
-                            is Resource.Error -> {
-                                _uiState.update {
-                                    _uiState.value.copy(
-                                        error = resource.message
-                                            ?: "An error occurred fetching goals.",
-                                        insertGoal_isLoading = false,
-                                        insertGoal_result = Resource.Error(
-                                            message = resource.message
-                                                ?: "An error occurred fetching goals."
-                                        )
-                                    )
-                                }
-                            }
-
-
                         }
+
+                        is Resource.Success -> {
+                            _uiState.update {
+                                _uiState.value.copy(
+                                    insertGoal_isLoading = false,
+                                    newGoalTitle = "",
+                                    insertGoal_result = Resource.Success("Operation successful")
+                                )
+                            }
+                            delay(100)
+                            _uiState.update {
+                                _uiState.value.copy(
+                                    insertGoal_isLoading = false,
+                                    insertGoal_result = null
+                                )
+                            }
+                        }
+
+                        is Resource.Error -> {
+                            _uiState.update {
+                                _uiState.value.copy(
+                                    error = resource.message
+                                        ?: "An error occurred fetching goals.",
+                                    insertGoal_isLoading = false,
+                                    insertGoal_result = Resource.Error(
+                                        message = resource.message
+                                            ?: "An error occurred fetching goals."
+                                    )
+                                )
+                            }
+                        }
+
+
                     }
+                }
             }
         }
     }
@@ -219,8 +312,11 @@ data class GoalsUiState(
     val getGoalsWithTask_result: Resource<String>? = null,
     val insertGoal_isLoading: Boolean = false,
     val insertGoal_result: Resource<String>? = null,
+    val deleteGoals_isLoading: Boolean = false,
+    val deleteGoals_result: Resource<String>? = null,
     val error: String = "",
     val newGoalTitle: String = "",
+    val filteredGoalWithTasks: GoalWithTasks? = null
 )
 
 data class GoalsForBoardsScreen(

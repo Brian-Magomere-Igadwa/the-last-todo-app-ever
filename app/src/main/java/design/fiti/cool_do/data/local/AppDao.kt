@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface AppDao {
     @Transaction
-    @Query("SELECT * FROM goals")
+    @Query("SELECT * FROM goals ORDER BY timeStampForSorting DESC")
     suspend fun getGoalsWithTasks(): List<GoalWithTasks>
 
     @Update(entity = GoalEntity::class)
@@ -29,12 +29,13 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE, entity = GoalEntity::class)
     suspend fun insertGoal(goal: GoalEntity)
 
-    @Delete(entity = GoalEntity::class)
-    suspend fun deleteGoal(goal: GoalEntity)
+    @Query("DELETE FROM goals WHERE id = :goalId")
+    suspend fun deleteGoal(goalId: Int)
 
     //delete goal with tasks
 
 
+    //sort tasks by time
     @Transaction
     @Query("SELECT * FROM goals WHERE id = :goalId")
     suspend fun getGoalWithTasks(goalId: Int): GoalWithTasks

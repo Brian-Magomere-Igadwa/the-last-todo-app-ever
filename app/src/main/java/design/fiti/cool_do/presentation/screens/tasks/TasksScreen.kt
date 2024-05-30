@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,28 +18,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,16 +46,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import design.fiti.cool_do.R
-import design.fiti.cool_do.presentation.navigation.AppRoutes
+import design.fiti.cool_do.data.local.entity.TaskEntity
 import design.fiti.cool_do.presentation.ui.theme.coolBlackWeak_d
+import design.fiti.cool_do.presentation.viewmodel.GoalsViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
-fun TasksScreen(modifier: Modifier = Modifier, navController: NavController) {
+fun TasksScreen(
+    modifier: Modifier = Modifier,
+    viewModel: GoalsViewModel,
+    goalId: Int,
+    navController: NavController
+) {
+    val state by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(key1 = Unit) {
+        viewModel.getGoalWithTasks(goalId)
+    }
     Scaffold(
         topBar = {
             TaskTopBar() { navController.navigateUp() }
@@ -73,8 +78,8 @@ fun TasksScreen(modifier: Modifier = Modifier, navController: NavController) {
                 .padding(top = innerPadding.calculateTopPadding()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            items(10) {
-                SwipeableTaskCard(modifier = Modifier.fillMaxWidth(0.9f))
+            items(state.filteredGoalWithTasks?.tasks ?: emptyList()) {
+                SwipeableTaskCard(modifier = Modifier.fillMaxWidth(0.9f), task = it)
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
@@ -123,7 +128,7 @@ private fun TaskTopBar(modifier: Modifier = Modifier, navigateUp: () -> Unit) {
 }
 
 @Composable
-private fun SwipeableTaskCard(modifier: Modifier = Modifier) {
+private fun SwipeableTaskCard(modifier: Modifier = Modifier, task: TaskEntity) {
     val offsetX = remember { Animatable(0f) }
     val coroutineScope = rememberCoroutineScope()
     val maxSwipe = 600f
@@ -213,7 +218,7 @@ private fun SwipeableTaskCard(modifier: Modifier = Modifier) {
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "Go to the market.",
+                    text = task.title,
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onBackground
@@ -235,7 +240,7 @@ private fun SwipeableTaskCard(modifier: Modifier = Modifier) {
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
-                            text = "Today 10:00 - 12:00 PM",
+                            text = "Today 10:00 - 12:00 PM" ,
                             style = MaterialTheme.typography.bodySmall.copy(
                                 color = coolBlackWeak_d.copy(
                                     alpha = 0.4f
@@ -275,10 +280,7 @@ private fun TaskCard(modifier: Modifier = Modifier) {
         ) {
             Text(
                 text = "Go to the market.",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 8.sp
-                )
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Row(

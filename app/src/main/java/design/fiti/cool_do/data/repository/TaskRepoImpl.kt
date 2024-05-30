@@ -1,5 +1,6 @@
 package design.fiti.cool_do.data.repository
 
+import android.util.Log
 import design.fiti.cool_do.data.local.AppDao
 import design.fiti.cool_do.data.local.entity.GoalWithTasks
 import design.fiti.cool_do.data.util.Resource
@@ -55,9 +56,11 @@ class TaskRepoImpl(
     override suspend fun deleteGoal(goal: Goal): Flow<Resource<String>> = flow {
         emit(Resource.Loading())
         try {
+            Log.d("Error Checks", "Reached to repo")
             dao.deleteGoal(
-                goal.toGoalEntity()
+                goal.id
             )
+            Log.d("Error Checks", "Reached to repo past $goal ${goal.toGoalEntity()}")
             emit(Resource.Success("Goal deleted successfully"))
         } catch (e: Exception) {
             emit(Resource.Error(message = e.localizedMessage ?: "An error occurred"))
