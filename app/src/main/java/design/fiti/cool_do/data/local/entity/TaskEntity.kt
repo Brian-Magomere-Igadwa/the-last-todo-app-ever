@@ -7,8 +7,9 @@ import androidx.room.PrimaryKey
 data class TaskEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
+    val goalId: Int,
     val title: String,
-    val timeline: String,
+    val deadline: String,
     val taskState: TaskState,
 )
 

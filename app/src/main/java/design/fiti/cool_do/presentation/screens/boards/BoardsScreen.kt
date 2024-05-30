@@ -1,7 +1,13 @@
 package design.fiti.cool_do.presentation.screens.boards
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,12 +23,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +43,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,14 +59,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import design.fiti.cool_do.R
+import design.fiti.cool_do.data.util.Resource
 import design.fiti.cool_do.presentation.navigation.AppRoutes
+import design.fiti.cool_do.presentation.viewmodel.GoalsForBoardsScreen
+import design.fiti.cool_do.presentation.viewmodel.GoalsUiState
+import design.fiti.cool_do.presentation.viewmodel.GoalsViewModel
 
 
 @Composable
 fun BoardsScreen(navController: NavController) {
     var addDoClicked by remember { mutableStateOf(false) }
+    val viewModel: GoalsViewModel = hiltViewModel()
+    val state by viewModel.uiState.collectAsState()
+
     Scaffold(
         topBar = {
             BoardHeaderSection()
@@ -69,7 +90,11 @@ fun BoardsScreen(navController: NavController) {
                 .fillMaxSize(),
         ) {
             if (addDoClicked)
-                DialogWithForm(onDismissRequest = { addDoClicked = false }, onConfirmation = {})
+                DialogWithForm(
+                    onDismissRequest = { addDoClicked = false },
+                    state = state,
+                    viewModel = viewModel,
+                    onConfirmation = {})
             Spacer(modifier = Modifier.height(innerPadding.calculateTopPadding()))
             Spacer(modifier = Modifier.height(16.dp))
             Text(
@@ -83,8 +108,8 @@ fun BoardsScreen(navController: NavController) {
                 item {
                     AddDo(onClick = { addDoClicked = true })
                 }
-                items(10) {
-                    CardItem() {
+                items(state.goalsForBoardsScreen) {
+                    CardItem(goal = it, viewModel = viewModel) {
                         navController.navigate(AppRoutes.Tasks.name)
                     }
                 }
@@ -98,8 +123,38 @@ fun BoardsScreen(navController: NavController) {
 fun DialogWithForm(
     onDismissRequest: () -> Unit,
     onConfirmation: () -> Unit,
+    viewModel: GoalsViewModel,
+    state: GoalsUiState
 ) {
     var inputValue by rememberSaveable { mutableStateOf("") }
+    var showLoader by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(key1 = state.insertGoal_result) {
+        when (state.insertGoal_result) {
+            is Resource.Success -> {
+                showLoader = false
+                viewModel.getGoalsForBoardsScreen()
+                onDismissRequest()
+            }
+
+            is Resource.Error -> {
+                // show error
+                showLoader = false
+            }
+
+            is Resource.Loading -> {
+                // show loading
+                showLoader = true
+            }
+
+            null -> {
+                // do nothing
+            }
+        }
+
+    }
+
+
     Dialog(onDismissRequest = { onDismissRequest() }) {
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
@@ -109,45 +164,62 @@ fun DialogWithForm(
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                TextField(
-                    value = inputValue,
-                    onValueChange = { inputValue = it },
-                    placeholder = {
-                        Text("Enter your new goal")
-                    },
-
+            Box {
+                Column(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    TextField(
+                        value = state.newGoalTitle,
+                        onValueChange = { viewModel.updateNewGoalTitle(it) },
+                        placeholder = {
+                            Text("Enter your new goal")
+                        },
                     )
 
-                Text(
-                    text = "Are you sure you'd love to save this goal?",
-                    modifier = Modifier.padding(16.dp),
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    TextButton(
-                        onClick = { onDismissRequest() },
-                        modifier = Modifier.padding(8.dp),
+                    Text(
+                        text = "Are you sure you'd love to save this goal?",
+                        modifier = Modifier.padding(16.dp),
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
                     ) {
-                        Text("Not really")
-                    }
-                    TextButton(
-                        onClick = { onConfirmation() },
-                        modifier = Modifier.padding(8.dp),
-                    ) {
-                        Text("Yes, sure.")
+                        TextButton(
+                            onClick = { onDismissRequest() },
+                            modifier = Modifier.padding(8.dp),
+                        ) {
+                            Text("Not really")
+                        }
+                        TextButton(
+                            onClick = {
+                                viewModel.insertGoal()
+                            },
+                            modifier = Modifier.padding(8.dp),
+                        ) {
+                            Text("Yes, sure.")
+                        }
                     }
                 }
+                if (showLoader)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surfaceDim),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "Loading")
+                            Spacer(modifier = Modifier.width(8.dp))
+                            CircularProgressIndicator()
+                        }
+                    }
             }
+
         }
     }
 }
@@ -229,7 +301,11 @@ private fun BoardHeaderSection(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun CardItem(navigateToSubTasksScreen: () -> Unit) {
+private fun CardItem(
+    goal: GoalsForBoardsScreen,
+    viewModel: GoalsViewModel,
+    navigateToSubTasksScreen: () -> Unit
+) {
     Card(
         modifier = Modifier
             .heightIn(
@@ -248,8 +324,8 @@ private fun CardItem(navigateToSubTasksScreen: () -> Unit) {
                 .padding(8.dp)
         ) {
             EmojiSection()
-            TaskHeadlines()
-            TaskStats()
+            TaskHeadlines(goal = goal)
+            TaskStats(goal = goal, viewModel = viewModel)
 
         }
     }
@@ -258,50 +334,90 @@ private fun CardItem(navigateToSubTasksScreen: () -> Unit) {
 @Preview
 @Composable
 private fun EmojiSection() {
-    Row(
-        modifier = Modifier
-            .padding(horizontal = 4.dp)
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
+    var showMenu by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    Box() {
+        Row(
             modifier = Modifier
-                .clip(
-                    CircleShape
-                )
-                .size(36.dp)
-                .background(MaterialTheme.colorScheme.primary),
-            contentAlignment = Alignment.Center
+                .padding(horizontal = 4.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "🎉",
-                style = MaterialTheme.typography.bodySmall
-            )
+
+            Box(
+                modifier = Modifier
+                    .clip(
+                        CircleShape
+                    )
+                    .size(36.dp)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "🎉",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            IconButton(onClick = { showMenu = true }) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = stringResource(id = R.string.morevet)
+                )
+            }
+
+
         }
-        IconButton(onClick = { /*TODO*/ }) {
-            Icon(
-                imageVector = Icons.Default.MoreVert,
-                contentDescription = stringResource(id = R.string.morevet)
+        AnimatedVisibility(
+            visible = showMenu,
+            enter = fadeIn() + slideInVertically(
+                animationSpec = spring(
+                    stiffness = 100f,
+                    dampingRatio = 0.1f,
+                )
+            ),
+            exit = fadeOut() + slideOutVertically(
+                animationSpec = spring(
+                    stiffness = 100f,
+                    dampingRatio = 0.1f
+                )
             )
+        ) {
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false },
+
+                modifier = Modifier.clip(
+                    RoundedCornerShape(32.dp)
+                )
+            ) {
+                DropdownMenuItem(text = { Text("Delete") }, onClick = { })
+                HorizontalDivider()
+                DropdownMenuItem(text = { Text("Edit") }, onClick = { /*TODO*/ })
+                HorizontalDivider()
+                DropdownMenuItem(text = { Text("Add Task") }, onClick = { /*TODO*/ })
+
+            }
         }
     }
 }
 
 @Preview
 @Composable
-private fun TaskHeadlines() {
+private fun TaskHeadlines(goal: GoalsForBoardsScreen) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
     ) {
         Text(
-            text = "Personal Task",
+            text = goal.goal.title,
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
         )
         Text(
-            text = "12 tasks",
+            text = "${goal.tasksCount} tasks",
             style = MaterialTheme.typography.bodySmall
         )
     }
@@ -309,10 +425,10 @@ private fun TaskHeadlines() {
 
 @Preview
 @Composable
-private fun TaskStats() {
+private fun TaskStats(goal: GoalsForBoardsScreen, viewModel: GoalsViewModel) {
     Row(modifier = Modifier.fillMaxWidth()) {
         Spacer(modifier = Modifier.width(8.dp))
-        VProgressBar()
+        VProgressBar(goal, viewModel)
         Spacer(modifier = Modifier.width(8.dp))
         Column {
             Text(
@@ -320,7 +436,7 @@ private fun TaskStats() {
                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
             )
             Text(
-                text = "70%",
+                text = goal.taskCompletionRate,
                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
             )
         }
@@ -329,9 +445,11 @@ private fun TaskStats() {
 
 @Preview
 @Composable
-private fun VProgressBar() {
+private fun VProgressBar(goal: GoalsForBoardsScreen, viewModel: GoalsViewModel) {
     val height = 28.dp
     val width = 8.dp
+    val targetController =
+        if (goal.tasksCount != 0) viewModel.parsePercentage(goal.taskCompletionRate) / goal.tasksCount else 0.2f
 
     var isItemVisible by remember { mutableStateOf(false) }
     DisposableEffect(Unit) {
@@ -344,7 +462,7 @@ private fun VProgressBar() {
         }
     }
     val multiplier by animateFloatAsState(
-        targetValue = if (isItemVisible) 0.6f else 0f,
+        targetValue = if (isItemVisible) targetController.toFloat() else 0f,
         animationSpec = spring(stiffness = 100f, dampingRatio = 0.1f)
     )
     Box(
