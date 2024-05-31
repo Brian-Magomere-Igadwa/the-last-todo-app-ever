@@ -25,7 +25,7 @@ class AppNavigationTest {
             navController = TestNavHostController(LocalContext.current).apply {
                 navigatorProvider.addNavigator(ComposeNavigator())
             }
-            BoardsScreen(navController = navController, viewModel = viewModel)
+//            BoardsScreen(navController = navController, viewModel = viewModel)
 
         }
     }

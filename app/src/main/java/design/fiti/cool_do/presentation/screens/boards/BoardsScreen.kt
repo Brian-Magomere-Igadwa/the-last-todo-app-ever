@@ -26,15 +26,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,6 +47,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -376,6 +383,9 @@ private fun EmojiSection(
     var showMenu by rememberSaveable {
         mutableStateOf(false)
     }
+    var showTaskAdder by rememberSaveable {
+        mutableStateOf(false)
+    }
     var showLoader by rememberSaveable {
         mutableStateOf(false)
     }
@@ -435,7 +445,17 @@ private fun EmojiSection(
                 )
             }
 
-
+        }
+        AnimatedVisibility(visible = showTaskAdder) {
+            DialogForTasks(
+                goalId = goal.goal.id,
+                onDismissRequest = { showTaskAdder = false },
+                onConfirmation = {
+                    showTaskAdder = false
+                },
+                viewModel = viewModel,
+                state = state
+            )
         }
         AnimatedVisibility(
             visible = showMenu,
@@ -468,11 +488,135 @@ private fun EmojiSection(
                         viewModel.deleteGoal(goal.goal)
                     })
                 HorizontalDivider()
-                DropdownMenuItem(text = { Text("Edit") }, onClick = { /*TODO*/ })
+                DropdownMenuItem(text = { Text("Edit") }, onClick = { })
                 HorizontalDivider()
-                DropdownMenuItem(text = { Text("Add Task") }, onClick = { /*TODO*/ })
+                DropdownMenuItem(text = { Text("Add Task") }, onClick = {
+                    showMenu = false
+                    showTaskAdder = true
+                })
 
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+private fun DialogForTasks(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+    viewModel: GoalsViewModel,
+    state: GoalsUiState,
+    goalId: Int
+) {
+    var showLoader by rememberSaveable { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+    val timePickerState = rememberTimePickerState()
+
+    LaunchedEffect(key1 = state.insertTask_result) {
+        when (state.insertTask_result) {
+            is Resource.Success -> {
+                showLoader = false
+                viewModel.getGoalsForBoardsScreen()
+                onDismissRequest()
+            }
+
+            is Resource.Error -> {
+                // show error
+                showLoader = false
+            }
+
+            is Resource.Loading -> {
+                // show loading
+                showLoader = true
+            }
+
+            null -> {
+                // do nothing
+            }
+        }
+
+    }
+
+
+    Dialog(onDismissRequest = { onDismissRequest() }) {
+        // Draw a rectangle shape with rounded corners inside the dialog
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height((375 * 2).dp)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Box {
+                Column(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .verticalScroll(rememberScrollState())
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    DatePicker(
+                        state = datePickerState,
+                        modifier = Modifier.fillMaxWidth(),
+                        title = { Text(text = "Let's make the task") })
+                    TimePicker(state = timePickerState)
+                    TextField(
+                        value = state.newTaskTitle,
+                        onValueChange = { viewModel.updateNewTaskTitle(it) },
+                        placeholder = {
+                            Text("Enter your new Task title")
+                        },
+                    )
+
+                    Text(
+                        text = "Are you sure you'd love to save this task for your goal?",
+                        modifier = Modifier.padding(16.dp),
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        TextButton(
+                            onClick = { onDismissRequest() },
+                            modifier = Modifier.padding(8.dp),
+                        ) {
+                            Text("Not really")
+                        }
+                        TextButton(
+                            onClick = {
+
+                                viewModel.insertTask(
+                                    dateMillis = datePickerState.selectedDateMillis,
+                                    timeHour = timePickerState.hour,
+                                    timeMins = timePickerState.minute,
+                                    goalId = goalId
+                                )
+                            },
+                            modifier = Modifier.padding(8.dp),
+                        ) {
+                            Text("Yes, sure.")
+                        }
+                    }
+                }
+                if (showLoader)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surfaceDim),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "Loading")
+                            Spacer(modifier = Modifier.width(8.dp))
+                            CircularProgressIndicator()
+                        }
+                    }
+            }
+
         }
     }
 }

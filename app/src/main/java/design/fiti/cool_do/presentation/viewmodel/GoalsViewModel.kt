@@ -168,6 +168,7 @@ class GoalsViewModel @Inject constructor(
                 repo.getGoalsWithTasks().collect { resource ->
                     when (resource) {
                         is Resource.Loading -> {
+                            Log.d("Error Checks", "A Loading bumped in .....")
                             _uiState.update {
                                 _uiState.value.copy(
                                     getGoalsForBoardsScreen_isLoading = true,
@@ -177,6 +178,7 @@ class GoalsViewModel @Inject constructor(
                         }
 
                         is Resource.Success -> {
+                            Log.d("Error Checks", "A Success bumped in .....")
                             _uiState.update {
                                 _uiState.value.copy(
                                     goalsForBoardsScreen = resource.data?.map { goalWithTasks ->
@@ -195,6 +197,7 @@ class GoalsViewModel @Inject constructor(
                         }
 
                         is Resource.Error -> {
+                            Log.d("Error Checks", "An Error bumped in ..... ${resource.message}")
                             _uiState.update {
                                 _uiState.value.copy(
                                     error = resource.message ?: "An error occurred fetching goals.",
@@ -293,6 +296,76 @@ class GoalsViewModel @Inject constructor(
         }
     }
 
+    fun updateNewTaskTitle(text: String) {
+        _uiState.update {
+            _uiState.value.copy(newTaskTitle = text)
+        }
+    }
+
+    fun insertTask(dateMillis: Long?, timeHour: Int, timeMins: Int, goalId: Int) {
+        if (uiState.value.newTaskTitle.isEmpty()) return _uiState.update { uiState.value.copy(error = "We cannot insert a goal that is empty.") }
+
+        _uiState.update {
+            _uiState.value.copy(insertTask_isLoading = true, insertTask_result = Resource.Loading())
+        }
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                repo.insertTask(
+                    Task(
+                        title = uiState.value.newTaskTitle,
+                        goalId = goalId,
+                        deadline = "$dateMillis $timeHour:$timeMins"
+                    )
+                ).collect { resource ->
+                    when (resource) {
+                        is Resource.Loading -> {
+                            _uiState.update {
+                                _uiState.value.copy(
+                                    insertTask_isLoading = true,
+                                    insertTask_result = Resource.Loading()
+                                )
+                            }
+                        }
+
+                        is Resource.Success -> {
+                            _uiState.update {
+                                _uiState.value.copy(
+                                    insertTask_isLoading = false,
+                                    newTaskTitle = "",
+                                    insertTask_result = Resource.Success("Operation successful")
+                                )
+                            }
+                            delay(100)
+                            _uiState.update {
+                                _uiState.value.copy(
+                                    insertTask_isLoading = false,
+                                    insertTask_result = null
+                                )
+                            }
+                        }
+
+                        is Resource.Error -> {
+                            _uiState.update {
+                                _uiState.value.copy(
+                                    error = resource.message
+                                        ?: "An error occurred fetching goals.",
+                                    insertTask_isLoading = false,
+                                    insertTask_result = Resource.Error(
+                                        message = resource.message
+                                            ?: "An error occurred fetching goals."
+                                    )
+                                )
+                            }
+                        }
+
+
+                    }
+                }
+            }
+        }
+    }
+
     init {
         getGoalsForBoardsScreen()
     }
@@ -312,12 +385,17 @@ data class GoalsUiState(
     val getGoalsWithTask_result: Resource<String>? = null,
     val insertGoal_isLoading: Boolean = false,
     val insertGoal_result: Resource<String>? = null,
+    val insertTask_isLoading: Boolean = false,
+    val insertTask_result: Resource<String>? = null,
     val deleteGoals_isLoading: Boolean = false,
     val deleteGoals_result: Resource<String>? = null,
     val error: String = "",
     val newGoalTitle: String = "",
+    val newTaskTitle: String = "",
     val filteredGoalWithTasks: GoalWithTasks? = null
-)
+) {
+
+}
 
 data class GoalsForBoardsScreen(
     val goal: Goal,

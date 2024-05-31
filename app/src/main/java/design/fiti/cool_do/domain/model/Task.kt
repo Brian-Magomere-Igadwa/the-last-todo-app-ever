@@ -8,10 +8,9 @@ data class Task(
     val goalId: Int,
     val title: String,
     val deadline: String,
-    val taskState: TaskState,
+    val taskState: TaskState = TaskState.TODO,
 ) {
     fun toTaskEntity(): TaskEntity = TaskEntity(
-        id = id,
         goalId = goalId,
         title = title,
         deadline = deadline,
