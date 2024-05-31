@@ -2,7 +2,7 @@
     <string name="app_name">cool-do</string>
     <string name="welcome_taskScreen">Welcome to the TasksScreen.</string>
     <string name="go_to_boardsScreen">Go to BoardsScreen</string>
-    <string name="welcome_boardScreen">Boards</string>
+    <string name="welcome_boardScreen">Goals</string>
     <string name="go_to_tasksScreen">Go to TasksScreen</string>
     <string name="morevet">More options</string>
     <string name="adddo">Make a new to do.</string>
