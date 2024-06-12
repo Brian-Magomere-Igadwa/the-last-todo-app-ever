@@ -2,8 +2,10 @@ package design.fiti.cool_do.data.local
 
 import androidx.room.ProvidedTypeConverter
 import androidx.room.TypeConverter
+import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import design.fiti.cool_do.data.local.entity.TaskState
+import design.fiti.cool_do.data.util.GsonParser
 import design.fiti.cool_do.data.util.JsonParser
 
 @ProvidedTypeConverter
@@ -26,9 +28,17 @@ class Converters(
 
     @TypeConverter
     fun fromTaskStateJson(json: String): TaskState {
-        return jsonParser.fromJson<TaskState>(
-            json, object : TypeToken<TaskState>() {}.type
-        ) ?: TaskState.TODO
+        var output: TaskState = TaskState.TODO
+        val obj = com.google.gson.JsonParser().parse(json).asJsonObject
+
+        output = when (obj["state"].asString) {
+            "TODO" -> TaskState.TODO
+            "INPROGRESS" -> TaskState.INPROGRESS
+            "COMPLETED" -> TaskState.COMPLETED
+            else -> TaskState.TODO
+        }
+
+        return output
     }
 
     @TypeConverter
